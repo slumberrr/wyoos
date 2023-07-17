@@ -1,0 +1,14 @@
+*.mod
+*.smod
+
+# Compiled Static Libraries
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+
+*.bin
+*.iso
