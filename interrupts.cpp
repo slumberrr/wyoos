@@ -1,25 +1,31 @@
 #include "interrupts.h"
 
+void printf(const char*);
+
 InterruptManager::GateDescriptor InterruptManager::interruptDescriptorTable[256];
 
 void InterruptManager::SetInterruptDescriptorTableEntry
 (
     uint8_t interruptNumber,
     uint16_t codeSegmentSelectorOffset,
-    void (*(handle))(),
+    void (*(handler))(),
     uint8_t DescriptorPrivilegeLevel,
     uint8_t DescriptorType
 )
 {
     const uint8_t IDT_DESC_PRESENT = 0x80;
-    interruptDescriptorTable[interruptNumber].handleAddressLowBits = ((uint32_t)handle) & 0xffff;
-    interruptDescriptorTable[interruptNumber].handleAddressHighBits = ((uint32_t)handle >> 16) & 0xffff;
+    interruptDescriptorTable[interruptNumber].handleAddressLowBits = ((uint32_t)handler) & 0xffff;
+    interruptDescriptorTable[interruptNumber].handleAddressHighBits = ((uint32_t)handler >> 16) & 0xffff;
     interruptDescriptorTable[interruptNumber].gdt_codeSegmentSelector = codeSegmentSelectorOffset;
     interruptDescriptorTable[interruptNumber].access = IDT_DESC_PRESENT | ((DescriptorPrivilegeLevel & 3) << 5) | DescriptorType;
     interruptDescriptorTable[interruptNumber].reserved = 0;
 }
 
 InterruptManager::InterruptManager(uint16_t hardwareInterruptOffset, GlobalDescriptorTable* gdt)
+: picMasterCommand(0x20),
+  picMasterData(0x21),
+  picSlaveCommand(0xA0),
+  picSlaveData(0xA1)
 {
     this->hardwareInterruptOffset = hardwareInterruptOffset;
     uint16_t codeSegment = gdt->CodeSegmentSelector();
@@ -28,6 +34,7 @@ InterruptManager::InterruptManager(uint16_t hardwareInterruptOffset, GlobalDescr
     for (uint16_t i = 0; i < 256; i++) {
         SetInterruptDescriptorTableEntry(i, codeSegment, &InterruptIgnore, 0, IDT_INTERRUPT_GATE);
     }
+
     SetInterruptDescriptorTableEntry(0x01, codeSegment, &HandleException0x01, 0, IDT_INTERRUPT_GATE);
     SetInterruptDescriptorTableEntry(0x02, codeSegment, &HandleException0x02, 0, IDT_INTERRUPT_GATE);
     SetInterruptDescriptorTableEntry(0x03, codeSegment, &HandleException0x03, 0, IDT_INTERRUPT_GATE);
@@ -66,10 +73,38 @@ InterruptManager::InterruptManager(uint16_t hardwareInterruptOffset, GlobalDescr
     SetInterruptDescriptorTableEntry(hardwareInterruptOffset + 0x0F, codeSegment, &HandleInterruptRequest0x0F, 0, IDT_INTERRUPT_GATE);
     SetInterruptDescriptorTableEntry(hardwareInterruptOffset + 0x31, codeSegment, &HandleInterruptRequest0x31, 0, IDT_INTERRUPT_GATE);
 
+    picMasterCommand.Write(0x11);
+    picSlaveCommand.Write(0x11);
+
+    picMasterData.Write(hardwareInterruptOffset);
+    picSlaveData.Write(hardwareInterruptOffset + 8);
+
+    picMasterData.Write(0x04);
+    picSlaveData.Write(0x02);
+
+    picMasterData.Write(0x01);
+    picSlaveData.Write(0x01);
+
+    picMasterData.Write(0x00);
+    picSlaveData.Write(0x00);
+
+    InterruptDescriptorTablePointer idt;
+    idt.size = 256 * sizeof(GateDescriptor) - 1;
+    idt.base = (uint32_t)interruptDescriptorTable;
+
+    asm volatile("lidt %0": :"m"(idt));
 }
 
-uint32_t InterruptManager::handleInterrupt(uint8_t interruptNumber, uint32_t esp)
+InterruptManager::~InterruptManager(){}
+
+void InterruptManager::Activate()
 {
+    asm("sti");
+}
+
+uint32_t InterruptManager::HandleInterrupt(uint8_t interruptNumber, uint32_t esp)
+{
+    printf("interrupts");
     return esp;
 }
 

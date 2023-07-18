@@ -1,10 +1,11 @@
+.set IRQ_BASE, 0x20
 .section .text
-.extern _ZN16InterruptManager15handleInterruptEhj
+.extern _ZN16InterruptManager15HandleInterruptEhj
 
 .macro HandleInterruptRequest num
 .global _ZN16InterruptManager26HandleInterruptRequest\num\()Ev
 _ZN16InterruptManager26HandleInterruptRequest\num\()Ev:
-    movb $\num, (interruptnumber)
+    movb $\num + IRQ_BASE, (interruptnumber)
     jmp int_bottom
 .endm
 
@@ -63,8 +64,8 @@ int_bottom:
 
     pushl %esp
     push (interruptnumber)
-    call _ZN16InterruptManager15handleInterruptEhj
-
+    call _ZN16InterruptManager15HandleInterruptEhj
+    add %esp, 6
     movl %eax, %esp
 
     popl %gs
