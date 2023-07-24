@@ -41,7 +41,7 @@ uint32_t KeyBoardDriver::HandleInterrupt(uint32_t esp)
         case 0x12: if (shift) printf("E"); else printf("e"); break;
         case 0x13: if (shift) printf("R"); else printf("r"); break;
         case 0x14: if (shift) printf("T"); else printf("t"); break;
-        case 0x15: if (shift) printf("Z"); else printf("z"); break;
+        case 0x15: if (shift) printf("Y"); else printf("y"); break;
         case 0x16: if (shift) printf("U"); else printf("u"); break;
         case 0x17: if (shift) printf("I"); else printf("i"); break;
         case 0x18: if (shift) printf("O"); else printf("o"); break;
@@ -57,7 +57,7 @@ uint32_t KeyBoardDriver::HandleInterrupt(uint32_t esp)
         case 0x25: if (shift) printf("K"); else printf("k"); break;
         case 0x26: if (shift) printf("L"); else printf("l"); break;
 
-        case 0x2C: if (shift) printf("Y"); else printf("y"); break;
+        case 0x2C: if (shift) printf("Z"); else printf("z"); break;
         case 0x2D: if (shift) printf("X"); else printf("x"); break;
         case 0x2E: if (shift) printf("C"); else printf("c"); break;
         case 0x2F: if (shift) printf("V"); else printf("v"); break;
